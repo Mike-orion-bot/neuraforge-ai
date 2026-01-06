@@ -1,0 +1,34 @@
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic-settings==2.2.0
+sqlalchemy==2.0.24
+alembic==1.13.1
+
+# Telegram & APIs
+python-telegram-bot==20.7
+pyrogram==2.0.106
+tgcrypto==1.2.5
+requests==2.31.0
+aiohttp==3.9.3
+httpx==0.26.0
+
+# IA/ML & LangChain
+openai==1.12.0
+langchain==0.1.12
+chromadb==0.4.24
+sentence-transformers==2.2.2
+transformers==4.37.2
+
+# Utilitarios
+python-dotenv==1.0.1
+cryptography==41.0.7
+babel==2.14.0
+pandas==2.2.0
+pillow==10.2.0
+numpy==1.26.4
+
+# Testing & Monitoring
+pytest==8.0.0
+loguru==0.7.2
+prometheus-client==0.20.0
