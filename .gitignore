@@ -1,6 +1,9 @@
 venv/
-__pycache__/
-*.db
 .env
-*.log
+__pycache__/
+*.pyc
+neuraforge.db
+install.log
 static/apk/
+temp_requirements.txt
+.DS_Store

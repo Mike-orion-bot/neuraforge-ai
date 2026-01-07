@@ -1,0 +1,130 @@
+import sqlite3
+import asyncio
+import logging
+import subprocess
+import os
+import sys
+from fastapi import FastAPI, Form, HTTPException
+from fastapi.responses import HTMLResponse
+from telegram import Bot
+from telegram.error import TelegramError
+import uvicorn
+
+# --- CONFIGURACIÓN CRÍTICA ---
+TOKEN_TELEGRAM = "TU_TOKEN_DE_TELEGRAM"
+ADMIN_PASSWORD = "neuraforge_admin_2026"
+DB_NAME = "neuraforge.db"
+
+# Inicialización
+bot = Bot(token=TOKEN_TELEGRAM)
+app = FastAPI(title="NeuraForge Bot Station Engine")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("NeuraForge")
+
+# --- MOTOR DE ACTUALIZACIÓN (GIT-SYNC) ---
+def trigger_self_update():
+    """La entidad revisa mejoras en Git y se auto-repara/actualiza"""
+    try:
+        logger.info("🔄 Revisando actualizaciones en GitHub...")
+        # Ejecuta git pull
+        process = subprocess.Popen(['git', 'pull'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        stdout, stderr = process.communicate()
+        
+        if "Already up to date" not in stdout:
+            logger.info("🚀 Nueva versión detectada. Reiniciando núcleo...")
+            # Reinicia el proceso actual
+            os.execv(sys.executable, ['python'] + sys.argv)
+        return stdout
+    except Exception as e:
+        logger.error(f"❌ Fallo en actualización: {e}")
+        return str(e)
+
+# --- BASE DE DATOS ---
+def get_db_connection():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    conn = get_db_connection()
+    # Tabla de usuarios y licencias (Número de Serie)
+    conn.execute('''CREATE TABLE IF NOT EXISTS users
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     telegram_id TEXT UNIQUE,
+                     username TEXT,
+                     serial_key TEXT,
+                     bot_type TEXT,
+                     is_active INTEGER DEFAULT 1)''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# --- INTERFAZ ADMINISTRATIVA MEJORADA ---
+@app.get("/admin/{password}", response_class=HTMLResponse)
+async def admin_dashboard(password: str):
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=403, detail="Acceso Denegado")
+
+    conn = get_db_connection()
+    total_users = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+    conn.close()
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>NeuraForge Admin Panel</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-slate-900 text-white font-sans">
+        <nav class="p-4 bg-slate-800 border-b border-blue-500 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-blue-400">NEURAFORGE <span class="text-xs text-white bg-blue-600 px-2 py-1 rounded">PROD</span></h1>
+            <div class="flex gap-4">
+                <form action="/update/{password}" method="post">
+                    <button class="text-xs bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded">FORZAR ACTUALIZACIÓN GIT</button>
+                </form>
+                <span class="text-green-400 font-mono self-center">Usuarios: {total_users}</span>
+            </div>
+        </nav>
+        
+        <main class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-lg font-bold mb-4 text-blue-300">📢 Difusión Masiva</h3>
+                <form action="/broadcast/{password}" method="post" class="space-y-4">
+                    <textarea name="mensaje" required class="w-full bg-slate-900 border border-slate-600 rounded p-3" rows="4" placeholder="Mensaje para todos los bots..."></textarea>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-bold">DESPLEGAR ANUNCIO</button>
+                </form>
+            </div>
+
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-lg font-bold mb-4 text-green-300">🛠️ Bot Station (Generar Licencia)</h3>
+                <form action="/generate-serial/{password}" method="post" class="space-y-4">
+                    <input type="text" name="telegram_id" placeholder="ID de Telegram del Usuario" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm" required>
+                    <select name="bot_type" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm">
+                        <option value="sat">Asesoría SAT</option>
+                        <option value="taxi">Sistema Taxi Pro</option>
+                        <option value="pizza">Pizzería Master</option>
+                        <option value="afiliados">Sistema Afiliados</option>
+                    </select>
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 py-2 rounded font-bold text-sm">GENERAR NÚMERO DE SERIE & APK</button>
+                </form>
+            </div>
+        </main>
+    </body>
+    </html>
+    """
+
+# --- ENDPOINT DE ACTUALIZACIÓN ---
+@app.post("/update/{password}")
+async def update_endpoint(password: str):
+    if password != ADMIN_PASSWORD: return {"error": "Unauthorized"}
+    result = trigger_self_update()
+    return HTMLResponse(content=f"<h2>Resultado Git:</h2><pre>{result}</pre><a href='/admin/{password}'>Volver</a>")
+
+# --- ENDPOINT DE BROADCAST Y MÁS (Ya implementado anteriormente) ---
+# [Aquí se incluiría el código de /broadcast que ya tienes funcional]
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
