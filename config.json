@@ -1,0 +1,20 @@
+{
+  "project_name": "NeuraForge AI",
+  "version": "1.0.0",
+  "owner": "u0_a353",
+  "ecosystem": {
+    "revenue_sharing": true,
+    "auto_funding": true,
+    "community_voting": true
+  },
+  "bots": {
+    "multibot": {
+      "enabled": true,
+      "purpose": "Gestión central del ecosistema"
+    },
+    "affiliate_bot": {
+      "enabled": true,
+      "purpose": "Generar ingresos con Hotmart"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+# 1. Crear docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+version: '3.8'
+
+services:
+  neuraforge:
+    image: python:3.11-slim
+    container_name: neuraforge_ecosystem
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /app
+    volumes:
+      - ./neuraforge_data:/app/data
+      - ./neuraforge_logs:/app/logs
+      - ./neuraforge_backups:/app/backups
+      - ./neuraforge_code:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+    command: >
+      sh -c "
+      git clone https://github.com/Mike-orion-bot/neuraforge-ai.git /app &&
+      cd /app &&
+      pip install -r requirements.txt &&
+      python main_ecosystem.py
+      "
+    restart: unless-stopped
+
+  sync-cron:
+    image: alpine:latest
+    container_name: neuraforge_sync
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./neuraforge_code:/app
+    command: >
+      sh -c "
+      echo '*/30 * * * * cd /app && git pull origin main' > /etc/crontabs/root &&
+      crond -f
+      "
+    restart: unless-stopped
+EOF
+
+# 2. Crear estructura de directorios
+mkdir -p {neuraforge_data,neuraforge_logs,neuraforge_backups,neuraforge_code}
+
+# 3. Iniciar con Docker
+docker-compose up -d
+
+# 4. Ver logs
+docker-compose logs -f
