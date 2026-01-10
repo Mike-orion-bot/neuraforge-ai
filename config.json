@@ -1,20 +1,15 @@
 {
-  "project_name": "NeuraForge AI",
-  "version": "1.0.0",
-  "owner": "u0_a353",
-  "ecosystem": {
-    "revenue_sharing": true,
-    "auto_funding": true,
-    "community_voting": true
-  },
-  "bots": {
-    "multibot": {
+  "payment_providers": {
+    "binance": {
       "enabled": true,
-      "purpose": "Gestión central del ecosistema"
+      "default": true,
+      "currencies": ["USDT", "BTC", "ETH", "BNB", "MXN"],
+      "networks": ["BEP20", "ERC20", "TRC20"]
     },
-    "affiliate_bot": {
-      "enabled": true,
-      "purpose": "Generar ingresos con Hotmart"
+    "bitso": {
+      "enabled": false,
+      "default": false,
+      "issues": ["authentication", "app_crashes"]
     }
   }
 }
