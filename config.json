@@ -7,7 +7,7 @@
       "networks": ["BEP20", "ERC20", "TRC20"]
     },
     "bitso": {
-      "enabled": false,
+      "enabled": true,
       "default": false,
       "issues": ["authentication", "app_crashes"]
     }
