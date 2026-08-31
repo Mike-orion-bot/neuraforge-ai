@@ -35,7 +35,42 @@ class GrowthManager:
                 'color_scheme': 'var(--crypto-accent)'
             }
         }
+
+   async def get_meta_ai_config_for_bot(self, bot_id: str):
+    """Devuelve qué modelo de Meta AI usar según el nivel del bot (Monetización)"""
+    status = self.growth_db.get_bot_growth_status(bot_id)
     
+    if 'error' in status:
+        return {"model": "Muse Spark Contributor", "cost": 0.10} # Default barato
+    
+    nivel = status['current_node']['current_node']
+    bot_type = status['current_node']['bot_type']
+    
+    # Configuración de modelos Meta por nivel
+    if nivel == 'nivel_3':
+        # Premium: Imágenes y Código
+        return {
+            "model": "Muse Image", 
+            "cost": 0.01,
+            "features": ["generacion_imagenes_premium", "analisis_codigo"],
+            "server": "google_cloud_premium"
+        }
+    elif nivel == 'nivel_2':
+        # Intermedio: Soporte avanzado con contexto 1M
+        return {
+            "model": "Muse Spark 1.2", 
+            "cost": 1.25,
+            "features": ["analisis_datos", "soporte_avanzado"],
+            "server": "google_cloud_standard"
+        }
+    else:
+        # Básico: Chat barato para no perder dinero
+        return {
+            "model": "Muse Spark 1.2 Contributor", 
+            "cost": 0.10,
+            "features": ["chat_basico", "textos_venta"],
+            "server": "google_cloud_basic"
+        }
     async def initialize_bot_growth(self, bot_id: str, bot_type: str, owner_id: str = None):
         """Inicializa el sistema de crecimiento para un bot nuevo"""
         
